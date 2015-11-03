@@ -507,7 +507,7 @@ A list of these variables is set as the `cider-locals' text property over
 the code where they are in scope.
 Optional argument OUTER-LOCALS is used to specify local variables defined
 before point."
-  (while (search-forward-regexp "(\\(ns\\|def\\|fn\\|for\\|loop\\|with-\\|do[a-z]+\\|\\([a-z]+-\\)?let\\b\\)"
+  (while (search-forward-regexp "(\\(ns\\_>\\|def\\|fn\\|for\\b\\|loop\\b\\|with-\\|do[a-z]+\\|\\([a-z]+-\\)?let\\b\\)"
                                 end 'noerror)
     (goto-char (match-beginning 0))
     (let ((sym (match-string 1))
