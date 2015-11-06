@@ -218,9 +218,7 @@ from the file extension."
               ;; OW, find one matching the extension of current file.
               (let ((type (or type (file-name-extension (or (buffer-file-name) "")))))
                 (or (seq-find (lambda (conn)
-                                (equal (with-current-buffer conn
-                                         cider-repl-type)
-                                       type))
+                                (equal (cider--connection-type conn) type))
                               project-connections)
                     (car project-connections)))))))
     ;; TODO: Add logic to dispatch to a matching Clojure/ClojureScript REPL based on file type
@@ -422,12 +420,16 @@ Signal an error if it is not supported."
   (unless (cider-nrepl-op-supported-p op)
     (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) cider-nrepl %s and restart CIDER" op (upcase cider-version))))
 
-(defun cider-nrepl-send-request (request callback)
+(defun cider-nrepl-send-request (request callback &optional connection)
   "Send REQUEST and register response handler CALLBACK.
 REQUEST is a pair list of the form (\"op\" \"operation\" \"par1-name\"
 \"par1\" ... ).
+
+If CONNECTION is provided dispatch to that connection instead of
+the current connection.
+
 Return the id of the sent message."
-  (nrepl-send-request request callback (cider-current-connection)))
+  (nrepl-send-request request callback (or connection (cider-current-connection))))
 
 (defun cider-nrepl-send-sync-request (request &optional abort-on-input)
   "Send REQUEST to the nREPL server synchronously.
@@ -596,17 +598,21 @@ thing at point."
 ;;; Requests
 
 (declare-function cider-load-file-handler "cider-interaction")
-(defun cider-request:load-file (file-contents file-path file-name &optional callback)
+(defun cider-request:load-file (file-contents file-path file-name &optional connection callback)
   "Perform the nREPL \"load-file\" op.
 FILE-CONTENTS, FILE-PATH and FILE-NAME are details of the file to be
-loaded. If CALLBACK is nil, use `cider-load-file-handler'."
+loaded.
+
+If CONNECTION is nil, use `cider-current-connection'.
+If CALLBACK is nil, use `cider-load-file-handler'."
   (cider-nrepl-send-request (list "op" "load-file"
                                   "session" (cider-current-session)
                                   "file" file-contents
                                   "file-path" file-path
                                   "file-name" file-name)
                             (or callback
-                                (cider-load-file-handler (current-buffer)))))
+                                (cider-load-file-handler (current-buffer)))
+                            connection))
 
 
 ;;; Sync Requests
